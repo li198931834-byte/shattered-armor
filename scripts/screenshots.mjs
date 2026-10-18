@@ -10,7 +10,7 @@ const hook=async page=>{
   await page.route('**/app.js',route=>route.fulfill({contentType:'application/javascript',body:app+'\nwindow.__qa={get game(){return game;},renderer,hud,handleEvents};'}));
   await page.goto('http://127.0.0.1:8096/dist/');
 };
-const shot=(page,name)=>page.screenshot({path:fileURLToPath(new URL(name,out)),fullPage:true});
+const shot=async(page,name)=>{await page.waitForTimeout(80);await page.evaluate(()=>__qa.renderer.draw(__qa.game,3200,{}));await page.screenshot({path:fileURLToPath(new URL(name,out)),fullPage:true});};
 try{
   const page=await browser.newPage({viewport:{width:1440,height:1100}});
   await hook(page);
@@ -23,10 +23,10 @@ try{
   await page.evaluate(()=>{const g=__qa.game;for(const e of g.enemies)g.hurtEnemy(e,1e8);while(g.totalXP<60){g.spawnEnemy();g.hurtEnemy(g.enemies.at(-1),1e8);}g.checkLevel();__qa.handleEvents();__qa.hud();});
   await shot(page,'upgrade.png');
   await page.locator('#levelChoices .upgrade-card').first().click();
-  await page.evaluate(()=>{const g=__qa.game;while(g.state==='upgrade')g.chooseUpgrade(g.choices[0]);g.wave=3;g.spawnRemaining=0;g.enemies=[];g.beginBoss();g.warningTime=0;g.update(0,{fire:false});g.player.invul=10000;for(let i=0;i<300;i++)g.update(1/60,{fire:false});g.player.invul=0;g.messageTime=0;__qa.handleEvents();__qa.hud();__qa.renderer.draw(g,3200,{});});
+  await page.evaluate(()=>{const g=__qa.game;while(g.state==='upgrade')g.chooseUpgrade(g.choices[0]);g.wave=g.waveCount;g.spawnRemaining=0;g.enemies=[];g.beginBoss();g.warningTime=0;g.update(0,{fire:false});g.player.invul=10000;for(let i=0;i<300;i++)g.update(1/60,{fire:false});g.player.invul=0;g.messageTime=0;__qa.handleEvents();__qa.hud();__qa.renderer.draw(g,3200,{});});
   await shot(page,'boss.png');
   await page.evaluate(()=>{const g=__qa.game;g.player.hp=g.player.maxHp;for(let i=0;i<3;i++){g.boss.shield=0;g.hurtBoss(1e9);}__qa.handleEvents();});
-  await page.locator('#upgradeChoices .upgrade-card').first().click();
+  await shot(page,'stage-clear.png');
   await page.locator('#nextBtn').click();
   await page.locator('#stagesBtn').click();
   await shot(page,'stages.png');
@@ -37,5 +37,5 @@ try{
   await phone.waitForTimeout(60);
   await phone.evaluate(()=>{const g=__qa.game;g.player.invul=10000;for(let i=0;i<300;i++)g.update(1/60,{fire:false});g.player.invul=0;g.messageTime=0;__qa.hud();__qa.renderer.draw(g,3200,{});});
   await shot(phone,'mobile.png');
-  console.log('Captured 6 current game screenshots from the running game.');
+  console.log('Captured 7 current game screenshots from the running game.');
 }finally{await browser.close();}
