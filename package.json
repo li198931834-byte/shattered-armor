@@ -1,0 +1,17 @@
+{
+  "name": "shattered-armor",
+  "version": "2.1.0",
+  "description": "碎甲成原 — 30-stage browser bullet hell with XP upgrades, boss battles and local saves.",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node --test tests/core.test.mjs tests/profile.test.mjs tests/balance.test.mjs",
+    "test:browser": "node tests/browser.test.mjs && node tests/accounts.browser.mjs && node tests/campaign.browser.mjs",
+    "screenshots": "node scripts/screenshots.mjs",
+    "serve": "node scripts/serve.mjs"
+  }
+}

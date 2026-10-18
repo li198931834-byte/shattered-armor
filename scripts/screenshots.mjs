@@ -1,0 +1,41 @@
+import {createRequire} from 'node:module';
+import {readFile,mkdir} from 'node:fs/promises';
+import {fileURLToPath} from 'node:url';
+const require=createRequire(import.meta.url),{chromium}=require('playwright');
+const out=new URL('../docs/screenshots/',import.meta.url);
+await mkdir(out,{recursive:true});
+const browser=await chromium.launch({headless:true,executablePath:process.env.BROWSER_EXECUTABLE_PATH||undefined});
+const app=await readFile(new URL('../dist/app.js',import.meta.url),'utf8');
+const hook=async page=>{
+  await page.route('**/app.js',route=>route.fulfill({contentType:'application/javascript',body:app+'\nwindow.__qa={get game(){return game;},renderer,hud,handleEvents};'}));
+  await page.goto('http://127.0.0.1:8096/dist/');
+};
+const shot=(page,name)=>page.screenshot({path:fileURLToPath(new URL(name,out)),fullPage:true});
+try{
+  const page=await browser.newPage({viewport:{width:1440,height:1100}});
+  await hook(page);
+  await shot(page,'menu.png');
+  await page.locator('#startBtn').click();
+  await page.evaluate(()=>window.requestAnimationFrame=()=>0);
+  await page.waitForTimeout(60);
+  await page.evaluate(()=>{const g=__qa.game;g.player.invul=10000;for(let i=0;i<420;i++)g.update(1/60,{fire:false});g.player.invul=0;g.messageTime=0;__qa.hud();__qa.renderer.draw(g,3200,{});});
+  await shot(page,'combat.png');
+  await page.evaluate(()=>{const g=__qa.game;for(const e of g.enemies)g.hurtEnemy(e,1e8);while(g.totalXP<60){g.spawnEnemy();g.hurtEnemy(g.enemies.at(-1),1e8);}g.checkLevel();__qa.handleEvents();__qa.hud();});
+  await shot(page,'upgrade.png');
+  await page.locator('#levelChoices .upgrade-card').first().click();
+  await page.evaluate(()=>{const g=__qa.game;while(g.state==='upgrade')g.chooseUpgrade(g.choices[0]);g.wave=3;g.spawnRemaining=0;g.enemies=[];g.beginBoss();g.warningTime=0;g.update(0,{fire:false});g.player.invul=10000;for(let i=0;i<300;i++)g.update(1/60,{fire:false});g.player.invul=0;g.messageTime=0;__qa.handleEvents();__qa.hud();__qa.renderer.draw(g,3200,{});});
+  await shot(page,'boss.png');
+  await page.evaluate(()=>{const g=__qa.game;g.player.hp=g.player.maxHp;for(let i=0;i<3;i++){g.boss.shield=0;g.hurtBoss(1e9);}__qa.handleEvents();});
+  await page.locator('#upgradeChoices .upgrade-card').first().click();
+  await page.locator('#nextBtn').click();
+  await page.locator('#stagesBtn').click();
+  await shot(page,'stages.png');
+  const phone=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true,deviceScaleFactor:1});
+  await hook(phone);
+  await phone.locator('#startBtn').tap();
+  await phone.evaluate(()=>window.requestAnimationFrame=()=>0);
+  await phone.waitForTimeout(60);
+  await phone.evaluate(()=>{const g=__qa.game;g.player.invul=10000;for(let i=0;i<300;i++)g.update(1/60,{fire:false});g.player.invul=0;g.messageTime=0;__qa.hud();__qa.renderer.draw(g,3200,{});});
+  await shot(phone,'mobile.png');
+  console.log('Captured 6 current game screenshots from the running game.');
+}finally{await browser.close();}
