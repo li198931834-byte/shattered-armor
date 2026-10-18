@@ -26,7 +26,7 @@ try{
   await page.evaluate(()=>{const g=__qa.game;while(g.state==='upgrade')g.chooseUpgrade(g.choices[0]);g.wave=g.waveCount;g.spawnRemaining=0;g.enemies=[];g.beginBoss();g.warningTime=0;g.update(0,{fire:false});g.player.invul=10000;for(let i=0;i<300;i++)g.update(1/60,{fire:false});g.player.invul=0;g.messageTime=0;__qa.handleEvents();__qa.hud();__qa.renderer.draw(g,3200,{});});
   await shot(page,'boss.png');
   await page.evaluate(()=>{const g=__qa.game;g.player.hp=g.player.maxHp;for(let i=0;i<3;i++){g.boss.shield=0;g.hurtBoss(1e9);}__qa.handleEvents();});
-  await shot(page,'stage-clear.png');
+  await page.locator('#upgradeChoices .upgrade-card').first().click();
   await page.locator('#nextBtn').click();
   await page.locator('#stagesBtn').click();
   await shot(page,'stages.png');
@@ -37,5 +37,5 @@ try{
   await phone.waitForTimeout(60);
   await phone.evaluate(()=>{const g=__qa.game;g.player.invul=10000;for(let i=0;i<300;i++)g.update(1/60,{fire:false});g.player.invul=0;g.messageTime=0;__qa.hud();__qa.renderer.draw(g,3200,{});});
   await shot(phone,'mobile.png');
-  console.log('Captured 7 current game screenshots from the running game.');
+  console.log('Captured 6 current game screenshots from the running game.');
 }finally{await browser.close();}
